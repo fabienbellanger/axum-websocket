@@ -14,7 +14,13 @@ pub async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let (mut sender, mut receiver) = stream.split();
 
     // Username gets set in the receive loop, if it's valid.
-    let username = create_username(state.clone(), &mut sender, &mut receiver).await;
+    let username = match create_username(state.clone(), &mut sender, &mut receiver).await {
+        Some(name) => name,
+        None => {
+            println!("Disconnected");
+            return;
+        }
+    };
 
     // We subscribe *before* sending the "joined" message, so that we will also
     // display it to our client.
@@ -72,7 +78,7 @@ async fn create_username(
     state: Arc<AppState>,
     sender: &mut SplitSink<WebSocket, Message>,
     receiver: &mut SplitStream<WebSocket>,
-) -> String {
+) -> Option<String> {
     // Username gets set in the receive loop, if it's valid.
     let mut username = String::new();
 
@@ -84,7 +90,7 @@ async fn create_username(
 
             // If not empty we want to quit the loop else we want to quit function.
             if !username.is_empty() {
-                break;
+                return None;
             } else {
                 // Only send our client that username is taken.
                 let _ = sender
@@ -94,14 +100,17 @@ async fn create_username(
         }
     }
 
-    username
+    match username.is_empty() {
+        false => Some(username),
+        true => None,
+    }
 }
 
 fn check_username(state: &AppState, string: &mut String, name: &str) {
     let mut user_set = state.user_set.lock().unwrap();
 
     let name = name.trim();
-    if !user_set.contains(name) {
+    if !user_set.contains(name) && !name.is_empty() {
         user_set.insert(name.to_owned());
 
         string.push_str(name);
