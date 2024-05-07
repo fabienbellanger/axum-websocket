@@ -17,7 +17,7 @@ pub async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let username = match create_username(state.clone(), &mut sender, &mut receiver).await {
         Some(name) => name,
         None => {
-            println!("Disconnected");
+            println!("Disconnected (no username)");
             return;
         }
     };
@@ -88,9 +88,11 @@ async fn create_username(
             // If username that is sent by client is not taken, fill username string.
             check_username(&state, &mut username, &name);
 
+            dbg!(username.clone());
+
             // If not empty we want to quit the loop else we want to quit function.
             if !username.is_empty() {
-                return None;
+                return Some(username);
             } else {
                 // Only send our client that username is taken.
                 let _ = sender
@@ -100,16 +102,14 @@ async fn create_username(
         }
     }
 
-    match username.is_empty() {
-        false => Some(username),
-        true => None,
-    }
+    None
 }
 
 fn check_username(state: &AppState, string: &mut String, name: &str) {
     let mut user_set = state.user_set.lock().unwrap();
 
     let name = name.trim();
+
     if !user_set.contains(name) && !name.is_empty() {
         user_set.insert(name.to_owned());
 
