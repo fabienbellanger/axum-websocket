@@ -58,6 +58,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     // Username gets set in the receive loop, if it's valid.
     let mut username = String::new();
+    
     // Loop until a text message is found.
     while let Some(Ok(message)) = receiver.next().await {
         if let Message::Text(name) = message {
@@ -101,8 +102,8 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let tx = state.tx.clone();
     let name = username.clone();
 
-    // Spawn a task that takes messages from the websocket, prepends the user
-    // name, and sends them to all broadcast subscribers.
+    // Spawn a task that takes messages from the websocket, prepends the username, 
+    // and sends them to all broadcast subscribers.
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(Message::Text(text))) = receiver.next().await {
             // Add username before message.
@@ -114,7 +115,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     tokio::select! {
         _ = (&mut send_task) => recv_task.abort(),
         _ = (&mut recv_task) => send_task.abort(),
-    };
+    }
 
     // Send "user left" message (similar to "joined" above).
     let msg = format!("{} left.", username);
