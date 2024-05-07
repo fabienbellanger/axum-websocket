@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSockets</title>
+</head>
+<body>
+<h1>WebSockets</h1>
+
+<label for="chat">
+    <textarea id="chat" style="display:block; width:600px; height:400px; box-sizing: border-box" cols="30" rows="10">
+    </textarea>
+</label>
+<label for="input">
+    <input id="input" style="display:block; width:600px; margin-top: 16px; box-sizing: border-box" type="text"
+           placeholder="Message">
+</label>
+
+<script>
+    const textarea = document.querySelector("#chat");
+    const input = document.querySelector("#input");
+
+    const websocket = new WebSocket("ws://localhost:3000/websocket");
+
+    websocket.onopen = function () {
+        console.log("connection opened");
+    }
+
+    websocket.onclose = function () {
+        console.log("connection closed");
+    }
+
+    websocket.onmessage = function (e) {
+        console.log("received message: " + e.data);
+        textarea.value += e.data + "\r\n";
+    }
+
+    input.onkeydown = function (e) {
+        if (e.key === "Enter") {
+            websocket.send(input.value);
+            input.value = "";
+        }
+    }
+</script>
+</body>
+</html>
