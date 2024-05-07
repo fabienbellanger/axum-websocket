@@ -73,6 +73,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     // Now send the "joined" message to all subscribers.
     let msg = format!("{} joined.", username);
+    println!(" --> {}", msg);
     let _ = state.tx.send(msg);
 
     // Spawn the first task that will receive broadcast messages and send text
@@ -80,7 +81,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let name = username.clone();
     let mut send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
-            println!("{name} receives a message...");
+            println!("   <-- {name} receives a message...");
             // In any websocket error, break loop.
             if sender.send(Message::Text(msg)).await.is_err() {
                 break;
@@ -97,7 +98,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(Message::Text(text))) = receiver.next().await {
             // Add username before message.
-            println!("{name} sends a message...");
+            println!(" --> {name} sends a message...");
             let _ = tx.send(format!("{}: {}", name, text));
         }
     });
